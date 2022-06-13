@@ -18,6 +18,7 @@ cv_bridge
 roscpp
 sensor_msgs
 std_msgs
+message_generation
 )
 ## System dependencies are found with CMake's conventions
 find_package(OpenCV 4 REQUIRED)
@@ -59,11 +60,11 @@ find_package(OpenVINO REQUIRED)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  BoundingBox.msg
+  BoundingBoxArray.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -80,10 +81,11 @@ find_package(OpenVINO REQUIRED)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs  # Or other packages containing msgs
+  test_openvino
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -117,7 +119,7 @@ find_package(OpenVINO REQUIRED)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES test_openvino
-CATKIN_DEPENDS cv_bridge roscpp sensor_msgs std_msgs
+CATKIN_DEPENDS cv_bridge roscpp sensor_msgs std_msgs message_runtime
 #  DEPENDS system_lib
 )
 

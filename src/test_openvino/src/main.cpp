@@ -8,38 +8,33 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <cv_bridge/cv_bridge.h>
+#include "test_openvino/BoundingBoxArray.h"
 
 // clang-format on
-
-struct box
-{
-    int x,y,w,h;
-    float conf;
-};
 
 class HumanDetection
 {
     private:
+    ros::Publisher publisher;
     ros::Subscriber subcriber;
-    std::string topic = "/integrated_camera/image_2D";
+    std::string pub_topic = "/boxes_data";
+    std::string sub_topic = "/integrated_camera/image_2D";
     // Config the model and device here
     ov::CompiledModel compiled_model;
     const std::string model_path = "/home/nguyen/project_detection/src/test_openvino/model/intel/person-detection-0203/FP32/person-detection-0203.xml";
     const std::string device_name = "CPU";
-    //image propeties
+    //image properties
     size_t batch_size = 1;
     size_t image_channels = 3;
     size_t image_width=1280;
     size_t image_height=720;
-    box results;
     
     public:
-    HumanDetection(ros::NodeHandle *nh)
+    HumanDetection(ros::NodeHandle nh)
     {
         this->setup_model();
-        //subcribe to get image
-        
-        subcriber = nh->subscribe(topic,1,&HumanDetection::get_results,this);
+        publisher = nh.advertise<test_openvino::BoundingBoxArray>(pub_topic,1);
+        subcriber = nh.subscribe(sub_topic,1,&HumanDetection::get_results,this);
         ros::spin();
     }
 
@@ -152,23 +147,27 @@ class HumanDetection
         //0 is "boxes", 1 is "labels"
         ov::Tensor output_tensor = infer_request.get_output_tensor(0);//output_tensor is tensor "boxes" with 5 values
 
-        // -------- Step 10. Visualize output
-        box results;
-
-        if (output_tensor.get_size()>0) for (int i = 0; i < output_tensor.get_size(); i = i+5)
+        // -------- Step 10. Visualize output and publish results
+        test_openvino::BoundingBoxArray results;
+        if (output_tensor.get_size()>0) for (int i = 0; i < output_tensor.get_size(); i+=5)
         {
             if (output_tensor.data<float>()[i+4]<=0.3) break; 
-            results.x = static_cast<int>(output_tensor.data<float>()[i]); //x of the upper left conner of the box
-            results.y = static_cast<int>(output_tensor.data<float>()[i+1]); //y of the upper left conner of the box
-            results.w = static_cast<int>(output_tensor.data<float>()[i+2]); //width of the box
-            results.h = static_cast<int>(output_tensor.data<float>()[i+3]); //height of the box
-            results.conf = output_tensor.data<float>()[i+4]; //confidence
 
-            cv::Rect rect(results.x,results.y,results.w-results.x,results.h-results.y);
+            results.boxes.resize(output_tensor.get_size());
+            results.boxes[i/5].x = static_cast<int>(output_tensor.data<float>()[i]); //x of the upper left conner of the box
+            results.boxes[i/5].y = static_cast<int>(output_tensor.data<float>()[i+1]); //y of the upper left conner of the box
+            results.boxes[i/5].w = static_cast<int>(output_tensor.data<float>()[i+2] - output_tensor.data<float>()[i]); //width of the box
+            results.boxes[i/5].h = static_cast<int>(output_tensor.data<float>()[i+3] - output_tensor.data<float>()[i+1]); //height of the box
+            results.boxes[i/5].confidence = output_tensor.data<float>()[i+4]; //confidence
+
+            // cv::Rect rect(results.x,results.y,results.w-results.x,results.h-results.y);
+            cv::Rect rect(results.boxes[i/5].x,results.boxes[i/5].y,results.boxes[i/5].w,results.boxes[i/5].h);
             cv::rectangle(bridge->image,rect,cv::Scalar(0,255,0),1,8);
-            cv::putText(bridge->image,std::to_string(results.conf),cv::Point(results.x,results.y),1,cv::FONT_HERSHEY_COMPLEX,cv::Scalar(0,0,255),1,8);
-        } 
+            cv::putText(bridge->image,std::to_string(results.boxes[i/5].confidence),cv::Point(results.boxes[i/5].x,results.boxes[i/5].y),1,cv::FONT_HERSHEY_COMPLEX,cv::Scalar(0,0,255),1,8);
+        }
 
+        publisher.publish(results);
+        results.boxes.clear();
         cv::Mat final_result = bridge->image;    
         cv::imshow("Results", final_result);
 
@@ -184,9 +183,8 @@ class HumanDetection
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "test_openvino");
-    
     ros::NodeHandle nh;
-    HumanDetection dt = HumanDetection(&nh);
+    HumanDetection dt = HumanDetection(nh);
      
     return 0;
 }

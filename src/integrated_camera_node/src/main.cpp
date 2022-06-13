@@ -15,6 +15,7 @@ int main(int argc, char **argv)
     cv::VideoCapture cap(0);
     cv::Mat frame;
 
+    ros::Rate loop_rate(10);
     while(ros::ok)
     {
         try
@@ -24,7 +25,10 @@ int main(int argc, char **argv)
             if(frame.empty()) std::cout << "No image available" << std::endl;
             else 
             {
+                ros::Time time = ros::Time::now();
                 msg.image = frame;
+                msg.header.stamp = time;
+                msg.header.frame_id = "integrated_camera/image_2D";
                 msg.encoding = "bgr8";
             }
             pb.publish(msg.toImageMsg());
@@ -32,6 +36,7 @@ int main(int argc, char **argv)
             int k = cv::waitKey(1);
             if (k=='q') break;
             ros::spinOnce();
+            loop_rate.sleep();
         }
         catch (cv_bridge::Exception& e) 
         {
@@ -39,6 +44,6 @@ int main(int argc, char **argv)
             return 0;
         }
     }
-
+    
     return 0;
 }
