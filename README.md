@@ -1,6 +1,6 @@
-#Project Object Detection
+# Project Object Detection
 
-##Cài đặt OpenVINO
+## Cài đặt OpenVINO
 -  Cài OpenVINO Runtime bằng bộ cài [tại đây](https://docs.openvino.ai/latest/openvino_docs_install_guides_installing_openvino_linux.html#doxid-openvino-docs-install-guides-installing-openvino-linux). Lưu ý khi chạy lệnh mở bộ cài 
 ```shell
   ./l_openvino_toolkit_p_<version>.sh
@@ -13,10 +13,10 @@ có thể chạy với quyền sudo để cài vào /opt
 ```
 có thể lưu lệnh này vào file .bashrc
 
-##Cài đặt OpenCV
+## Cài đặt OpenCV
 Hướng dẫn cài đặt OpenCV tại document của OpenCV [link](https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html) 
 
-##Chạy project
+## Chạy project
 - cd đến workspace chứa file src vừa clone, chạy catkin_make
 - Chạy lệnh:
 ```shell
@@ -34,8 +34,8 @@ Hướng dẫn cài đặt OpenCV tại document của OpenCV [link](https://doc
 ```
 để chạy rosnode subcribe image từ node trên và dùng OpenVINO suy luận lấy kết quả và publish message với data là BoundingBoxArray chứa tọa độ của hình chữ nhật và độ chính xác
 
-##Lưu ý
+## Lưu ý
 Chỉnh lại thông số ảnh đầu vào tại dòng 29, 30 và đường dẫn file đến model trong file main.cpp của package test_openvino
 Nhấn q vào cửa sổ để quit các app
 
-##Enjoy :>
+## Enjoy :>
